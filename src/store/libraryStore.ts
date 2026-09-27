@@ -12,6 +12,7 @@ interface LibraryState {
   toggleFavorite: (trackId: string) => void;
   deleteTrack: (trackId: string) => Promise<void>;
   addPlaylist: (name: string) => void;
+  deletePlaylist: (playlistId: string) => void;
   addTrackToPlaylist: (playlistId: string, trackId: string) => void;
   removeTrackFromPlaylist: (playlistId: string, trackId: string) => void;
 }
@@ -95,6 +96,13 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       createdAt: Date.now(),
     };
     const updated = [...get().playlists, newPlaylist];
+    set({ playlists: updated });
+    AsyncStorage.setItem('sonicpulse_playlists', JSON.stringify(updated)).catch(e => console.error('Failed to save playlists', e));
+  },
+
+  deletePlaylist: (playlistId) => {
+    const { playlists } = get();
+    const updated = playlists.filter((pl) => pl.id !== playlistId);
     set({ playlists: updated });
     AsyncStorage.setItem('sonicpulse_playlists', JSON.stringify(updated)).catch(e => console.error('Failed to save playlists', e));
   },

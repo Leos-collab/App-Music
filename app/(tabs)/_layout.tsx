@@ -1,24 +1,20 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
-import { colors } from '../../src/theme/colors';
+import { View, StyleSheet, ImageBackground } from 'react-native';
 import { typography } from '../../src/theme/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { MiniPlayer } from '../../src/components/MiniPlayer';
+import { useTheme } from '../../src/hooks/useTheme';
+import { useThemeStore } from '../../src/store/themeStore';
 
 export default function TabLayout() {
-  return (
-    <View style={styles.container}>
+  const colors = useTheme();
+  const backgroundImageUrl = useThemeStore(s => s.backgroundImageUrl);
+
+  const renderContent = () => (
+    <>
       <Tabs
         screenOptions={{
-          headerStyle: {
-            backgroundColor: colors.background,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-          },
-          headerTintColor: colors.text,
-          headerTitleStyle: {
-            fontFamily: typography.fonts.primaryBold,
-          },
+          headerShown: false,
           tabBarStyle: {
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
@@ -64,12 +60,31 @@ export default function TabLayout() {
         />
       </Tabs>
       <MiniPlayer />
+    </>
+  );
+
+  if (backgroundImageUrl) {
+    return (
+      <ImageBackground source={{ uri: backgroundImageUrl }} style={styles.container} blurRadius={10}>
+        <View style={[styles.overlay, { backgroundColor: colors.background }]}>
+          {renderContent()}
+        </View>
+      </ImageBackground>
+    );
+  }
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {renderContent()}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  overlay: {
     flex: 1,
   }
 });

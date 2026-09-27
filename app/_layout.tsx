@@ -1,10 +1,12 @@
 import { Stack } from 'expo-router';
+import { View, ImageBackground } from 'react-native';
 import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans';
 import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
-import { colors } from '../src/theme/colors';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { useThemeStore } from '../src/store/themeStore';
+import { useTheme } from '../src/hooks/useTheme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -16,17 +18,25 @@ export default function RootLayout() {
     'Inter-Medium': Inter_500Medium,
   });
 
+  const { load: loadTheme, isLoaded: isThemeLoaded } = useThemeStore();
+  const colors = useTheme();
+  const backgroundImageUrl = useThemeStore((s) => s.backgroundImageUrl);
+
   useEffect(() => {
-    if (loaded) {
+    loadTheme();
+  }, []);
+
+  useEffect(() => {
+    if (loaded && isThemeLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, isThemeLoaded]);
 
-  if (!loaded) {
+  if (!loaded || !isThemeLoaded) {
     return null;
   }
 
-  return (
+  const renderStack = () => (
     <>
       <StatusBar style="light" translucent backgroundColor="transparent" />
       <Stack
@@ -43,8 +53,24 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="now-playing" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="playlist/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="equalizer" options={{ presentation: 'modal', title: 'Equalizador' }} />
+        <Stack.Screen name="profile" options={{ presentation: 'modal', headerShown: false }} />
       </Stack>
     </>
   );
+
+  if (backgroundImageUrl) {
+    return (
+      <ImageBackground
+        source={{ uri: backgroundImageUrl }}
+        style={{ flex: 1 }}
+        blurRadius={4}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          {renderStack()}
+        </View>
+      </ImageBackground>
+    );
+  }
+
+  return renderStack();
 }

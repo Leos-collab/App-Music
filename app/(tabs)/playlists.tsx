@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Modal, Alert } from 'react-native';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { useLibraryStore } from '../../src/store/libraryStore';
@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function PlaylistsScreen() {
-  const { playlists, addPlaylist } = useLibraryStore();
+  const { playlists, addPlaylist, deletePlaylist } = useLibraryStore();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [playlistName, setPlaylistName] = useState('');
@@ -18,6 +18,17 @@ export default function PlaylistsScreen() {
       setPlaylistName('');
       setModalVisible(false);
     }
+  };
+
+  const handleDeletePlaylist = (id: string, name: string) => {
+    Alert.alert(
+      'Excluir Playlist',
+      `Tem certeza que deseja excluir a playlist "${name}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', style: 'destructive', onPress: () => deletePlaylist(id) }
+      ]
+    );
   };
 
   const renderItem = ({ item }: { item: any }) => (
@@ -32,6 +43,9 @@ export default function PlaylistsScreen() {
         <Text style={styles.playlistName}>{item.name}</Text>
         <Text style={styles.playlistCount}>{item.trackIds.length} faixas</Text>
       </View>
+      <Pressable onPress={() => handleDeletePlaylist(item.id, item.name)} style={styles.deleteButton}>
+        <Ionicons name="trash" size={22} color="#FF5252" />
+      </Pressable>
       <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
     </Pressable>
   );
@@ -139,6 +153,10 @@ const styles = StyleSheet.create({
   },
   playlistName: { fontFamily: typography.fonts.primaryBold, fontSize: typography.sizes.md, color: colors.text, marginBottom: 4 },
   playlistCount: { fontFamily: typography.fonts.secondary, fontSize: typography.sizes.sm, color: colors.textSecondary },
+  deleteButton: {
+    padding: 8,
+    marginRight: 8,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',

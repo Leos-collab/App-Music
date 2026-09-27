@@ -5,12 +5,18 @@ import { typography } from '../../src/theme/typography';
 import { useLibraryStore } from '../../src/store/libraryStore';
 import { usePlayerStore } from '../../src/store/playerStore';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
+
+import { router } from 'expo-router';
+import { useTheme } from '../../src/hooks/useTheme';
+import { useThemeStore } from '../../src/store/themeStore';
 
 export default function LibraryScreen() {
   const { tracks, loadTracks, addTrack, toggleFavorite, deleteTrack, playlists, addTrackToPlaylist } = useLibraryStore();
   const { playTrack, currentTrack, isPlaying } = usePlayerStore();
-
+  const colors = useTheme();
+  const { profile } = useThemeStore();
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [playlistModalVisible, setPlaylistModalVisible] = useState(false);
 
@@ -31,9 +37,18 @@ export default function LibraryScreen() {
           const filename = asset.name;
           const title = filename.substring(0, filename.lastIndexOf('.')) || filename;
           
+          // Create a permanent path in the app's document directory
+          const newPath = `${FileSystem.documentDirectory}${Date.now()}_${filename.replace(/\s/g, '_')}`;
+          
+          // Copy the file from its temporary/external location to our app's storage
+          await FileSystem.copyAsync({
+            from: asset.uri,
+            to: newPath
+          });
+          
           await addTrack({
-            id: asset.uri,
-            uri: asset.uri,
+            id: newPath, // Use the new permanent path as ID to ensure uniqueness
+            uri: newPath,
             title: title,
             artist: 'Desconhecido',
             filename: filename,
@@ -76,13 +91,24 @@ export default function LibraryScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Biblioteca</Text>
-        <Pressable style={styles.importButton} onPress={handleImport}>
-          <Ionicons name="add" size={24} color={colors.background} />
-          <Text style={styles.importButtonText}>Importar</Text>
-        </Pressable>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Pressable onPress={() => router.push('/profile')} style={[styles.avatarBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.primary }]}>
+              <Text style={styles.avatarEmoji}>{profile.avatarEmoji}</Text>
+            </Pressable>
+            <View>
+              <Text style={[styles.greeting, { color: colors.textSecondary }]}>Olá,</Text>
+              <Text style={[styles.profileName, { color: colors.text }]}>{profile.name}</Text>
+            </View>
+          </View>
+          <Pressable style={[styles.importButton, { backgroundColor: colors.primary }]} onPress={handleImport}>
+            <Ionicons name="add" size={24} color={colors.background} />
+            <Text style={[styles.importButtonText, { color: colors.background }]}>Importar</Text>
+          </Pressable>
+        </View>
+        <Text style={[styles.title, { color: colors.text }]}>Biblioteca</Text>
       </View>
 
       {tracks.length === 0 ? (
@@ -171,17 +197,44 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    marginBottom: 20,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarEmoji: {
+    fontSize: 22,
+  },
+  greeting: {
+    fontFamily: typography.fonts.secondaryMedium,
+    fontSize: typography.sizes.sm,
+  },
+  profileName: {
+    fontFamily: typography.fonts.primaryBold,
+    fontSize: typography.sizes.lg,
   },
   title: {
     fontFamily: typography.fonts.primaryBold,
-    fontSize: typography.sizes.xl,
-    color: colors.text,
+    fontSize: typography.sizes.xxl,
   },
   importButton: {
     flexDirection: 'row',
